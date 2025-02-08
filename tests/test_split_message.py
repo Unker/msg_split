@@ -1,7 +1,7 @@
 import unittest
 from unittest.mock import patch
 from lxml import etree
-from msg_split import split_message
+from msg_split import _get_chunk, split_message
 
 
 class TestSplitMessage(unittest.TestCase):
@@ -97,22 +97,45 @@ class TestSplitMessage(unittest.TestCase):
         # Проверяем содержимое фрагментов
         self.assertIn('<div class="container">123<p id="p1">Hello</p></div>', fragments[0])
         self.assertIn('<div class="container"><p id="p2">World</p></div>', fragments[1])
+        
+    def test_get_chunk(self):
+        element = etree.fromstring('<div><p>Hello</p><p>World</p></div>')
+        open_tags_stack = []
+        close_tags_stack = []
+        is_full = False
 
+        result = _get_chunk(element, max_len=30, open_tags_stack=open_tags_stack, close_tags_stack=close_tags_stack, is_full=is_full)
+        assert result == '<div><p>Hello</p>'
 
-# def test_failed_to_remove_chunk(self):
-#     """Тест для случая, когда chunk не удаляется из source."""
-#     html = "<div><p>Hello</p><p>World</p></div>"
-#     max_len = 100
+    def test_failed_to_remove_chunk(self):
+        """Тест для случая, когда chunk не удаляется из source."""
+        html = "<div><p>Hello</p><p>World</p></div>"
+        max_len = 30
 
-#     # Мокаем функцию get_chunk
-#     def mock_get_chunk(element, max_len, current_chunk=""):
-#         return "This chunk does not exist in the source"
+        # Мокаем функцию _get_chunk
+        def mock_get_chunk(element, max_len, open_tags_stack, close_tags_stack, is_full, current_chunk=""):
+            return "incorrect chunk html"
 
-#     with patch.object(split_message, 'get_chunk', new=mock_get_chunk):
-#         with self.assertRaises(ValueError) as context:
-#             list(split_message(html, max_len))
+        with patch('msg_split._get_chunk', new=mock_get_chunk):
+            with self.assertRaises(ValueError) as context:
+                list(split_message(html, max_len))
 
-#         self.assertIn("Failed to remove chunk from source", str(context.exception))
+            self.assertIn("Failed to remove chunk from source", str(context.exception))
+
+    def test_failed_max_len(self):
+        """chunk больше, чем max_len."""
+        html = "<div><p>Hello</p><p>World</p></div>"
+        max_len = 30
+
+        # Мокаем функцию _get_chunk
+        def mock_get_chunk(element, max_len, open_tags_stack, close_tags_stack, is_full, current_chunk=""):
+            return "This chunk does not exist in the source"
+
+        with patch('msg_split._get_chunk', new=mock_get_chunk):
+            with self.assertRaises(ValueError) as context:
+                list(split_message(html, max_len))
+
+            self.assertIn("Chunk length exceeds max_len", str(context.exception))
 
 if __name__ == "__main__":
     # unittest.main()
