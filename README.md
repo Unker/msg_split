@@ -73,6 +73,15 @@ poetry run pytest tests/test_split_message.py::TestSplitMessage::test_simple_htm
 poetry run pytest --cov=msg_split tests/
 ```
 
+### Генерирование отчет о покрытии
+
+Чтобы увидеть, какие строки не покрыты тестами, сгенерируйте отчет в формате HTML:
+
+```bash
+poetry run pytest --cov=msg_split --cov-report=html tests/
+```
+Далее перейдите в папку htmlcov и откройте index.html
+
 ---
 
 ## Использование
