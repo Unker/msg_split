@@ -48,7 +48,7 @@ def split_message(source: str, max_len=MAX_LEN) -> Generator[str, None, None]:
 
             total_close_tags_length = sum(len(tag) for tag in close_tags_stack)
 
-            # Пытаемся добавить весь блок
+            # 1. Пытаемся добавить весь блок
             html_text = etree.tostring(element, encoding="unicode", method="html")
             total_length = len(current_chunk) + len(html_text) + total_close_tags_length
             if total_length < max_len:
@@ -57,38 +57,44 @@ def split_message(source: str, max_len=MAX_LEN) -> Generator[str, None, None]:
                 open_tags_stack.pop()
                 return current_chunk
             else:
-                # Если нет потомков, то это должен быть последний блок в current_chunk
+                # Если нет потомков
                 if len(element) == 0:
-                    # Отсекаем хвост
-                    tail_length = max_len - total_length
-                    tail_text = html_text[:tail_length]
-                    current_chunk += tail_text
-                    close_tags_stack.pop()
-                    open_tags_stack.pop()
-                    is_full = True
-                    return current_chunk
+                    if current_chunk != "":
+                        # возращаем что получилось накопить. Возможно этот блок поместится в следующей итерации
+                        close_tags_stack.pop()
+                        open_tags_stack.pop()
+                        is_full = True
+                        return current_chunk
+                    else:
+                        raise ValueError(
+                            f"Cannot split block: {get_open_tag(element)} (text too long)"
+                        )
 
-            # Пытаемся добавить открывающий тег
+            # 2. Пытаемся добавить открывающий тег
             if len(current_chunk) + len(open_tag) + total_close_tags_length > max_len:
                 close_tags_stack.pop()
                 open_tags_stack.pop()
                 is_full = True
-                return current_chunk
+                if current_chunk == "":
+                    raise ValueError(f"Cannot add opening tag: {get_open_tag(element)} (not enough space)")
+                else:
+                    return current_chunk
             else:
                 current_chunk += open_tag
 
-            # Пытаемся добавить текст элемента
+            # 3. Пытаемся добавить текст элемента
             if element.text:
                 if (
                     len(current_chunk) + len(element.text) + total_close_tags_length
                     > max_len
                 ):
-                    is_full = True
-                    return current_chunk
+                    # is_full = True
+                    # return current_chunk
+                    raise ValueError(f"Cannot text from: {get_open_tag(element)} (not enough space)")
                 else:
                     current_chunk += element.text
 
-            # Обходим дочерние элементы
+            # 4. Обходим дочерние элементы
             for child in element:
                 if is_full:
                     break
@@ -99,37 +105,59 @@ def split_message(source: str, max_len=MAX_LEN) -> Generator[str, None, None]:
     open_tags_stack = []
     close_tags_stack = []
     is_full = False
+    previous_source_length = len(source)  # Для проверки на зацикливание
 
     while True:
         if len(source) < max_len:
             yield source
             break
+        
+        source_old = source
 
         # Парсим HTML
         tree = etree.fromstring(f"<body>{source}</body>")
         body_element = tree.xpath("//body")[0]
 
-        chunk = get_chunk(body_element, max_len)
-        chunk = chunk.replace("<body>", "").replace("</body>", "")
+        try:
+            chunk = get_chunk(body_element, max_len)
+            chunk = chunk.replace("<body>", "").replace("</body>", "")
+            if len(chunk) > max_len:
+                raise ValueError(f"Chunk length exceeds max_len: {len(chunk)} > {max_len}")
 
-        # Удаляем обработанную часть из исходного элемента
-        source = source.replace(chunk, "", 1)
+            # Удаляем обработанную часть из исходного элемента
+            source_before_length = len(source)
+            source = source.replace(chunk, "", 1)
+            source_after_length = len(source)
+            if source_before_length - source_after_length == 0:
+                raise ValueError(f"Failed to remove chunk from source: {source[:len(chunk)]}. Chunk: '{chunk}'")
 
-        if not source:
-            break
+            if not source:
+                break
 
-        # Закрываем все открытые теги
-        close_tags = "".join(reversed(close_tags_stack))
-        chunk += close_tags
+            # Закрываем все открытые теги
+            close_tags = "".join(reversed(close_tags_stack))
+            chunk += close_tags
 
-        yield chunk
+            yield chunk
 
-        is_full = False
-        # Открываем тэги в новом фрагменте
-        open_tags = "".join(open_tags_stack)
-        open_tags_stack = []
-        close_tags_stack = []
-        source = open_tags + source
+            is_full = False
+            # Открываем тэги в новом фрагменте
+            open_tags = "".join(open_tags_stack)
+            open_tags_stack = []
+            close_tags_stack = []
+
+            # Проверка на зацикливание
+            new_source = open_tags + source
+            if len(new_source) >= previous_source_length:
+                raise ValueError("Potential infinite loop detected: source length did not decrease")
+            previous_source_length = len(new_source)
+
+            source = new_source
+
+        except ValueError as e:
+            raise e
+            # yield f"Error: {e}"
+            # break
 
 
 if __name__ == "__main__":

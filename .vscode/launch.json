@@ -13,7 +13,7 @@
       "console": "integratedTerminal",
       "args": [
         "--max-len", "200",
-        "./tmp.html", 
+        "./tset.html", 
       ]
     }
   ]
