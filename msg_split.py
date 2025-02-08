@@ -1,6 +1,6 @@
 from lxml import etree
-from typing import Generator, List, Optional, Any
-import argparse
+from typing import Generator, List
+import click
 
 MAX_LEN: int = 4096
 open_tags_stack: List[str] = []  # Стек для отслеживания открытых тегов
@@ -114,6 +114,7 @@ def split_message(source: str, max_len: int = MAX_LEN) -> Generator[str, None, N
         if len(source) < max_len:
             yield source
             break
+        source_old: str = source
 
         # Парсим HTML
         tree: etree._ElementTree = etree.fromstring(f"<body>{source}</body>")
@@ -160,24 +161,28 @@ def split_message(source: str, max_len: int = MAX_LEN) -> Generator[str, None, N
         except ValueError as e:
             raise e
 
-if __name__ == "__main__":
-    parser: argparse.ArgumentParser = argparse.ArgumentParser(
-        description="Split HTML message into fragments."
-    )
-    parser.add_argument(
-        "--max-len", type=int, default=MAX_LEN, help="Maximum length of each fragment"
-    )
-    parser.add_argument("file", type=str, help="Path to the HTML file")
-
-    args: argparse.Namespace = parser.parse_args()
-
-    with open(args.file, "r", encoding="utf-8") as file:
-        source: str = file.read()
+@click.command()
+@click.option(
+    "--max-len",
+    type=int,
+    default=MAX_LEN,
+    help="Maximum length of each fragment.",
+    show_default=True,
+)
+@click.argument("file", type=click.Path(exists=True, readable=True))
+def main(max_len: int, file: str) -> None:
+    """Split HTML message into fragments.
+    """
+    with open(file, "r", encoding="utf-8") as f:
+        source: str = f.read()
 
     try:
-        for i, fragment in enumerate(split_message(source, args.max_len), 1):
-            print(f"fragment #{i}: {len(fragment)} chars")
-            print(fragment)
-            print("-" * 40)
+        for i, fragment in enumerate(split_message(source, max_len), 1):
+            click.echo(f"fragment #{i}: {len(fragment)} chars")
+            click.echo(fragment)
+            click.echo("-" * 40)
     except ValueError as e:
-        print(f"Error: {e}")
+        click.echo(f"Error: {e}", err=True)
+
+if __name__ == "__main__":
+    main()

@@ -90,6 +90,12 @@ pytest --cov=msg_split tests/
 
 ## Использование
 
+### Получение справки
+
+```bash
+python msg_split.py --help
+```
+
 ### Пример использования
 
 ```bash
