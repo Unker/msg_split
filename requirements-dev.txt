@@ -1,3 +1,4 @@
 -r requirements.txt
 pytest==8.3.4
-pytest-cov==5.0.0pytest --cov=
+pytest-cov==5.0.0
+coverage==7.6.1
