@@ -137,6 +137,18 @@ class TestSplitMessage(unittest.TestCase):
 
             self.assertIn("Chunk length exceeds max_len", str(context.exception))
 
+    def test_multiple_disallowed_tags(self):
+        """Тест для случая, когда в HTML несколько запрещенных тегов."""
+        html = "<script><p>Hello</p><h1>World</h1><h2>Another</h2></script>"
+        max_len = 35
+
+        with self.assertRaises(ValueError) as context:
+            list(split_message(html, max_len))
+
+        # Проверяем, что сообщение об ошибке содержит информацию о первом запрещенном теге
+        self.assertIn("Tag <script> is not allowed for splitting", str(context.exception))
+
+
 if __name__ == "__main__":
     # unittest.main()
     loader = unittest.TestLoader()

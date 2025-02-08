@@ -4,6 +4,9 @@ import click
 
 MAX_LEN: int = 4096
 
+# Список разрешенных тегов
+ALLOWED_TAGS = {"p", "b", "strong", "i", "ul", "ol", "div", "span"}
+
 def _get_open_tag(element: etree._Element) -> str:
     """Формирует открывающий тег с атрибутами."""
     tag: str = f"<{element.tag}"
@@ -69,40 +72,51 @@ def _get_chunk(
                     raise ValueError(
                         f"Cannot split block: {_get_open_tag(element)} (text too long)"
                     )
-
-            # 2. Пытаемся добавить открывающий тег
-            if len(current_chunk) + len(open_tag) + total_close_tags_length > max_len:
+                
+        # Проверяем, разрешен ли тег для разделения
+        if element.tag not in ALLOWED_TAGS and element.tag != "body":
+            if current_chunk != "":
+                # Возвращаем что получилось накопить. Возможно этот блок поместится в следующей итерации
                 close_tags_stack.pop()
                 open_tags_stack.pop()
                 is_full = True
-                if current_chunk == "":
-                    raise ValueError(
-                        f"Cannot add opening tag: {_get_open_tag(element)} (not enough space)"
-                    )
-                else:
-                    return current_chunk
+                return current_chunk
             else:
-                current_chunk += open_tag
+                raise ValueError(f"Tag <{element.tag}> is not allowed for splitting.")
 
-            # 3. Пытаемся добавить текст элемента
-            if element.text:
-                if (
-                    len(current_chunk) + len(element.text) + total_close_tags_length
-                    > max_len
-                ):
-                    raise ValueError(
-                        f"Cannot add text from: {_get_open_tag(element)} (not enough space)"
-                    )
-                else:
-                    current_chunk += element.text
-
-            # 4. Обходим дочерние элементы
-            for child in element:
-                if is_full:
-                    break
-                current_chunk = _get_chunk(
-                    child, max_len, open_tags_stack, close_tags_stack, is_full, current_chunk
+        # 2. Пытаемся добавить открывающий тег
+        if len(current_chunk) + len(open_tag) + total_close_tags_length > max_len:
+            close_tags_stack.pop()
+            open_tags_stack.pop()
+            is_full = True
+            if current_chunk == "":
+                raise ValueError(
+                    f"Cannot add opening tag: {_get_open_tag(element)} (not enough space)"
                 )
+            else:
+                return current_chunk
+        else:
+            current_chunk += open_tag
+
+        # 3. Пытаемся добавить текст элемента
+        if element.text:
+            if (
+                len(current_chunk) + len(element.text) + total_close_tags_length
+                > max_len
+            ):
+                raise ValueError(
+                    f"Cannot add text from: {_get_open_tag(element)} (not enough space)"
+                )
+            else:
+                current_chunk += element.text
+
+        # 4. Обходим дочерние элементы
+        for child in element:
+            if is_full:
+                break
+            current_chunk = _get_chunk(
+                child, max_len, open_tags_stack, close_tags_stack, is_full, current_chunk
+            )
 
     return current_chunk
 
@@ -188,4 +202,3 @@ def main(max_len: int, file: str) -> None:
 
 if __name__ == "__main__":
     main()
-    
