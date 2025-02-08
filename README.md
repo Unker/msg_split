@@ -22,13 +22,14 @@
 ## Структура репозитория
 ```
 .
-├── msg_split.py    # Основной скрипт
-├── poetry.lock     # Файл с зафиксированными версиями зависимостей
-├── pyproject.toml  # Конфигурация проекта и зависимости
+├── msg_split.py              # Основной скрипт
+├── run_sample_msg_split.sh   # Запуск скрипта с предустановленными параметрами для демонстрации
+├── poetry.lock               # Файл с зафиксированными версиями зависимостей
+├── pyproject.toml            # Конфигурация проекта и зависимости
 ├── README.md
 └── tests 
-    ├── source.html   # Пример HTML-файла для тестирования
-    ├── test.html     # Дополнительный HTML-файл для тестирования
+    ├── source.html           # Пример HTML-файла для тестирования
+    ├── test.html             # Дополнительный HTML-файл для тестирования
     └── test_split_message.py # Тесты для скрипта msg_split.py
 ````
 
@@ -45,16 +46,16 @@
 
 1. **Клонируйте репозиторий:**
 
-   ```bash
-   git clone https://github.com/Unker/msg_split.git
-   cd msg_split
-   ```
+    ```bash
+    git clone https://github.com/Unker/msg_split.git
+    cd msg_split
+    ```
 
 1. **Установите Poetry (если еще не установлен):**
 
-   ```bash
-   pip install poetry
-   ```
+    ```bash
+    pip install poetry
+    ```
 
 1. **Установите зависимости:**
 
@@ -67,6 +68,16 @@
       ```bash
       poetry install
       ```
+
+ 1. **Сделайте демонстрационный скрипт исполняемым (опционально):**
+    ```bash
+    chmod +x run_sample_msg_split.sh
+    ```
+    И запустите его
+    ```bash
+    ./run_sample_msg_split.sh
+    ```
+    
 ---
 
 ## Запуск тестов
