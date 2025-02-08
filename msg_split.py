@@ -114,7 +114,6 @@ def split_message(source: str, max_len: int = MAX_LEN) -> Generator[str, None, N
         if len(source) < max_len:
             yield source
             break
-        source_old: str = source
 
         # Парсим HTML
         tree: etree._ElementTree = etree.fromstring(f"<body>{source}</body>")

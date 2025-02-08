@@ -17,6 +17,7 @@
 Для работы понадобится:
 
 - Python 3.8 или выше
+- [Poetry](https://python-poetry.org/) (для управления зависимостями)
 
 ---
 
@@ -26,39 +27,25 @@
 
    ```bash
    git clone https://github.com/Unker/msg_split.git
-   cd вmsg_split
+   cd msg_split
    ```
 
-1. **Создайте виртуальное окружение:**
+1. **Установите Poetry (если еще не установлен):**
 
    ```bash
-   python -m venv .venv
+   pip install poetry
    ```
-
-1. **Активируйте виртуальное окружение:**
-
-   - На Windows:
-
-     ```bash
-     .venv/Scripts/activate
-     ```
-
-   - На macOS/Linux:
-
-     ```bash
-     source .venv/bin/activate
-     ```
 
 1. **Установите зависимости:**
 
    - для использования
       ```bash
-      pip install -r requirements.txt
+      poetry install --no-dev
       ```
 
    - для разработки
       ```bash
-      pip install -r requirements-dev.txt
+      poetry install
       ```
 ---
 
@@ -67,7 +54,7 @@
 Проект использует `pytest` для запуска тестов. Чтобы запустить все тесты, выполните:
 
 ```bash
-pytest -v
+poetry run pytest -v
 ```
 
 ### Запуск конкретного теста
@@ -75,7 +62,7 @@ pytest -v
 Если вы хотите запустить конкретный тест, используйте команду, например:
 
 ```bash
-pytest tests/test_split_message.py::TestSplitMessage::test_simple_html -v
+poetry run pytest tests/test_split_message.py::TestSplitMessage::test_simple_html -v
 ```
 
 ### Покрытие кода тестами
@@ -83,7 +70,7 @@ pytest tests/test_split_message.py::TestSplitMessage::test_simple_html -v
 Чтобы проверить покрытие кода тестами выполните:
 
 ```bash
-pytest --cov=msg_split tests/
+poetry run pytest --cov=msg_split tests/
 ```
 
 ---
@@ -93,13 +80,13 @@ pytest --cov=msg_split tests/
 ### Получение справки
 
 ```bash
-python msg_split.py --help
+poetry run python msg_split.py --help
 ```
 
 ### Пример использования
 
 ```bash
-python msg_split.py --max-len=4396 ./tests/source.html 
+poetry run python msg_split.py --max-len=4396 ./tests/source.html
 ```
 
 ---
