@@ -40,7 +40,7 @@
    - На Windows:
 
      ```bash
-     .venv/bin/activate
+     .venv/Scripts/activate
      ```
 
    - На macOS/Linux:
